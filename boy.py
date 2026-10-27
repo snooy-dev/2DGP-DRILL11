@@ -5,6 +5,7 @@ from pico2d import load_image, SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_LEFT, SD
 from transitions import Machine
 
 AUTORUN_DURATION = 5.0
+AUTORUN_SPEED = 6
 
 
 class AutoRun:
@@ -20,6 +21,9 @@ class AutoRun:
     def update(boy):
         if monotonic() - boy.autorun_started_at >= AUTORUN_DURATION:
             boy.finish_autorun()
+            return
+        boy.frame = (boy.frame + 1) % 8
+        boy.x += boy.face_dir * AUTORUN_SPEED
 
 
 class Boy:
@@ -38,7 +42,7 @@ class Boy:
         }], initial='IDLE', auto_transitions=False)
         self.machine.add_transition('sleep', 'IDLE', 'SLEEP')
         self.machine.add_transition('wake', 'SLEEP', 'IDLE')
-        self.machine.add_transition('start_run', ['IDLE', 'SLEEP'], 'RUN')
+        self.machine.add_transition('start_run', ['IDLE', 'SLEEP', 'AUTORUN'], 'RUN')
         self.machine.add_transition('stop_run', 'RUN', 'IDLE')
         self.machine.add_transition('start_autorun', 'IDLE', 'AUTORUN')
         self.machine.add_transition('finish_autorun', 'AUTORUN', 'IDLE')
@@ -56,6 +60,12 @@ class Boy:
                 else:
                     self.pressed_keys.discard(event.key)
                 self.move_dir = (SDLK_RIGHT in self.pressed_keys) - (SDLK_LEFT in self.pressed_keys)
+                if self.state == 'AUTORUN':
+                    if event.type == SDL_KEYDOWN:
+                        if self.move_dir:
+                            self.face_dir = self.move_dir
+                        self.start_run()
+                    return
                 if self.move_dir:
                     self.face_dir = self.move_dir
                     if self.state != 'RUN':
