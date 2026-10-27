@@ -1,8 +1,26 @@
 from math import pi
 from time import monotonic
 
-from pico2d import load_image, SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_LEFT, SDLK_RIGHT
+from pico2d import load_image, SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_LEFT, SDLK_RIGHT, SDLK_a
 from transitions import Machine
+
+AUTORUN_DURATION = 5.0
+
+
+class AutoRun:
+    @staticmethod
+    def enter(boy):
+        boy.autorun_started_at = monotonic()
+
+    @staticmethod
+    def exit(boy):
+        boy.last_input_time = monotonic()
+
+    @staticmethod
+    def update(boy):
+        if monotonic() - boy.autorun_started_at >= AUTORUN_DURATION:
+            boy.finish_autorun()
+
 
 class Boy:
     def __init__(self):
@@ -13,15 +31,23 @@ class Boy:
         self.move_dir = 0
         self.image = load_image('animation_sheet.png')
         self.last_input_time = monotonic()
-        self.machine = Machine(model=self, states=['IDLE', 'SLEEP', 'RUN'], initial='IDLE', auto_transitions=False)
+        self.machine = Machine(model=self, states=['IDLE', 'SLEEP', 'RUN', {
+            'name': 'AUTORUN',
+            'on_enter': lambda: AutoRun.enter(self),
+            'on_exit': lambda: AutoRun.exit(self),
+        }], initial='IDLE', auto_transitions=False)
         self.machine.add_transition('sleep', 'IDLE', 'SLEEP')
         self.machine.add_transition('wake', 'SLEEP', 'IDLE')
         self.machine.add_transition('start_run', ['IDLE', 'SLEEP'], 'RUN')
         self.machine.add_transition('stop_run', 'RUN', 'IDLE')
+        self.machine.add_transition('start_autorun', 'IDLE', 'AUTORUN')
+        self.machine.add_transition('finish_autorun', 'AUTORUN', 'IDLE')
 
     def handle_event(self, event):
         if event.type in (SDL_KEYDOWN, SDL_KEYUP):
             self.last_input_time = monotonic()
+            if self.state == 'IDLE' and event.type == SDL_KEYDOWN and event.key == SDLK_a:
+                self.start_autorun()
             if self.state == 'SLEEP' and event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
                 self.wake()
             if event.key in (SDLK_LEFT, SDLK_RIGHT):
@@ -45,6 +71,8 @@ class Boy:
         elif self.state == 'RUN':
             self.frame = (self.frame + 1) % 8
             self.x += self.move_dir * 3
+        elif self.state == 'AUTORUN':
+            AutoRun.update(self)
 
     def draw(self):
         if self.state == 'IDLE':
