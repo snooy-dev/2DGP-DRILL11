@@ -1,4 +1,4 @@
-# DRILL 12 소년의 자동 무적 런(AutoRun) 상태 추가
+# DRILL 11 소년의 자동 무적 런(AutoRun) 상태 추가
 
 새 스테이트인 AUTORUN 추가.
 
