@@ -7,6 +7,8 @@ from transitions import Machine
 AUTORUN_DURATION = 5.0
 AUTORUN_SPEED = 6
 AUTORUN_SIZE = 150
+# shortcut: 현재 RUN 16프레임의 불투명 x 범위, 스프라이트 교체 시 다시 측정.
+RUN_VISIBLE_X = (18, 84)
 
 
 class AutoRun:
@@ -25,10 +27,11 @@ class AutoRun:
             return
         boy.frame = (boy.frame + 1) % 8
         boy.x += boy.face_dir * AUTORUN_SPEED
-        half_size = AUTORUN_SIZE / 2
-        right_edge = get_canvas_width() - half_size
-        if boy.x <= half_size:
-            boy.x, boy.face_dir = half_size, 1
+        scale = AUTORUN_SIZE / 100
+        left_edge = (50 - RUN_VISIBLE_X[0]) * scale
+        right_edge = get_canvas_width() - (RUN_VISIBLE_X[1] - 50) * scale
+        if boy.x <= left_edge:
+            boy.x, boy.face_dir = left_edge, 1
         elif boy.x >= right_edge:
             boy.x, boy.face_dir = right_edge, -1
 
