@@ -1,5 +1,4 @@
 from pico2d import *
-import random
 from boy import Boy
 from grass import Grass
 
@@ -36,7 +35,6 @@ def reset_world():
 def update_world():
     for o in world:
         o.update()
-    pass
 
 
 def render_world():
