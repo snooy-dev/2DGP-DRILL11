@@ -96,7 +96,9 @@ class Boy:
                 self.sleep()
         elif self.state == 'RUN':
             self.frame = (self.frame + 1) % 8
-            self.x += self.move_dir * 3
+            left_edge = 50 - RUN_VISIBLE_X[0]
+            right_edge = get_canvas_width() - (RUN_VISIBLE_X[1] - 50)
+            self.x = max(left_edge, min(self.x + self.move_dir * 3, right_edge))
         elif self.state == 'AUTORUN':
             AutoRun.update(self)
 
