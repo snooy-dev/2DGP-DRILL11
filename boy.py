@@ -1,11 +1,12 @@
 from math import pi
 from time import monotonic
 
-from pico2d import load_image, SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_LEFT, SDLK_RIGHT, SDLK_a
+from pico2d import load_image, get_canvas_width, SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_LEFT, SDLK_RIGHT, SDLK_a
 from transitions import Machine
 
 AUTORUN_DURATION = 5.0
 AUTORUN_SPEED = 6
+AUTORUN_SIZE = 150
 
 
 class AutoRun:
@@ -24,6 +25,18 @@ class AutoRun:
             return
         boy.frame = (boy.frame + 1) % 8
         boy.x += boy.face_dir * AUTORUN_SPEED
+        half_size = AUTORUN_SIZE / 2
+        right_edge = get_canvas_width() - half_size
+        if boy.x <= half_size:
+            boy.x, boy.face_dir = half_size, 1
+        elif boy.x >= right_edge:
+            boy.x, boy.face_dir = right_edge, -1
+
+    @staticmethod
+    def draw(boy):
+        row = 100 if boy.face_dir == 1 else 0
+        draw_y = boy.y + (AUTORUN_SIZE - 100) / 2
+        boy.image.clip_draw(boy.frame * 100, row, 100, 100, boy.x, draw_y, AUTORUN_SIZE, AUTORUN_SIZE)
 
 
 class Boy:
@@ -93,6 +106,8 @@ class Boy:
         elif self.state == 'RUN':
             row = 100 if self.face_dir == 1 else 0
             self.image.clip_draw(self.frame * 100, row, 100, 100, self.x, self.y)
+        elif self.state == 'AUTORUN':
+            AutoRun.draw(self)
         elif self.state == 'SLEEP':
             row = 300 if self.face_dir == 1 else 200
             # Align the rotated sprite's opaque bottom with the standing feet.
